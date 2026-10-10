@@ -1,0 +1,179 @@
+{
+  "dataset_sha256": "edf5a420d96db879fca851d2b212f0cbeec2d897feaab742af0cdf260d350283",
+  "rows": 98,
+  "host": {
+    "system": "Windows",
+    "python": "3.12.14"
+  },
+  "settings": {
+    "lambda_": 0.5,
+    "threshold": 0.4,
+    "alpha": 0.6,
+    "max_sweeps": 12,
+    "fairness": true
+  },
+  "eligible_edges": 1520,
+  "comparison": [
+    {
+      "algorithm": "Heap greedy",
+      "pairs": 40,
+      "unmatched": 18,
+      "coverage": 0.8163265306122449,
+      "total": 28.41259565324551,
+      "mean": 0.7103148913311379,
+      "minimum": 0.3854545204545517,
+      "variance": 0.017693047428324726,
+      "compatibility": 0.7564392663311378,
+      "conflict": 0.29300000000000004
+    },
+    {
+      "algorithm": "CASPER",
+      "pairs": 40,
+      "unmatched": 18,
+      "coverage": 0.8163265306122449,
+      "total": 28.47022294263943,
+      "mean": 0.7117555735659857,
+      "minimum": 0.3854545204545517,
+      "variance": 0.016300296996488006,
+      "compatibility": 0.7572574485659859,
+      "conflict": 0.29125
+    },
+    {
+      "algorithm": "Blossom reference",
+      "pairs": 49,
+      "unmatched": 0,
+      "coverage": 1.0,
+      "total": 31.641743388184686,
+      "mean": 0.6457498650649935,
+      "minimum": 0.28395,
+      "variance": 0.022527515693411135,
+      "compatibility": 0.7005070079221365,
+      "conflict": 0.3248979591836734
+    }
+  ],
+  "refinement": {
+    "swaps": 2,
+    "passes": 3,
+    "converged": true,
+    "greedy_ms": 13.116,
+    "refinement_ms": 0.045,
+    "process_ms": 52.90909996256232
+  },
+  "timing_ms": {
+    "scoring_ms": 5.013299989514053,
+    "exact_ms": 150.64030000939965,
+    "pipeline_ms": 227.32759988866746
+  },
+  "lambda_evaluation": [
+    {
+      "lambda": 0.0,
+      "pairs": 41,
+      "unmatched": 16,
+      "coverage": 0.8367346938775511,
+      "total": 30.968479587821342,
+      "mean": 0.7553287704346668,
+      "minimum": 0.4654545204545517,
+      "variance": 0.014808258868603229,
+      "compatibility": 0.7553287704346668,
+      "conflict": 0.3015853658536585
+    },
+    {
+      "lambda": 0.25,
+      "pairs": 41,
+      "unmatched": 16,
+      "coverage": 0.8367346938775511,
+      "total": 30.058669567386993,
+      "mean": 0.7331382821313901,
+      "minimum": 0.4254545204545517,
+      "variance": 0.014748182511360753,
+      "compatibility": 0.7566000199362681,
+      "conflict": 0.2974390243902439
+    },
+    {
+      "lambda": 0.5,
+      "pairs": 40,
+      "unmatched": 18,
+      "coverage": 0.8163265306122449,
+      "total": 28.47022294263943,
+      "mean": 0.7117555735659857,
+      "minimum": 0.3854545204545517,
+      "variance": 0.016300296996488006,
+      "compatibility": 0.7572574485659859,
+      "conflict": 0.29125
+    },
+    {
+      "lambda": 0.75,
+      "pairs": 40,
+      "unmatched": 18,
+      "coverage": 0.8163265306122449,
+      "total": 27.45125456031622,
+      "mean": 0.6862813640079055,
+      "minimum": 0.3454545204545517,
+      "variance": 0.019492371275674908,
+      "compatibility": 0.7542271452579056,
+      "conflict": 0.290625
+    },
+    {
+      "lambda": 1.0,
+      "pairs": 40,
+      "unmatched": 18,
+      "coverage": 0.8163265306122449,
+      "total": 26.457610065962715,
+      "mean": 0.6614402516490678,
+      "minimum": 0.3054545204545517,
+      "variance": 0.020065178777007732,
+      "compatibility": 0.7507877516490679,
+      "conflict": 0.28775000000000006
+    },
+    {
+      "lambda": 1.25,
+      "pairs": 40,
+      "unmatched": 18,
+      "coverage": 0.8163265306122449,
+      "total": 25.443725023861713,
+      "mean": 0.636093125596543,
+      "minimum": 0.26545452045455165,
+      "variance": 0.022017855550804006,
+      "compatibility": 0.7470907818465429,
+      "conflict": 0.288375
+    },
+    {
+      "lambda": 1.5,
+      "pairs": 40,
+      "unmatched": 18,
+      "coverage": 0.8163265306122449,
+      "total": 24.792152921659646,
+      "mean": 0.6198038230414911,
+      "minimum": 0.22545452045455167,
+      "variance": 0.021316773210695732,
+      "compatibility": 0.7478635105414911,
+      "conflict": 0.28287500000000004
+    },
+    {
+      "lambda": 1.75,
+      "pairs": 38,
+      "unmatched": 22,
+      "coverage": 0.7755102040816326,
+      "total": 23.390697695235296,
+      "mean": 0.6155446761904025,
+      "minimum": 0.18545452045455169,
+      "variance": 0.02147252549229788,
+      "compatibility": 0.7503188538219814,
+      "conflict": 0.26855263157894727
+    },
+    {
+      "lambda": 2.0,
+      "pairs": 38,
+      "unmatched": 22,
+      "coverage": 0.7755102040816326,
+      "total": 22.71066474952836,
+      "mean": 0.5976490723560094,
+      "minimum": 0.3442044954545579,
+      "variance": 0.017485153915212187,
+      "compatibility": 0.760446440777062,
+      "conflict": 0.2760526315789474
+    }
+  ],
+  "policy_selected_lambda": 0.25,
+  "note": "Single-host observations; timings are not universal speedup evidence. No pair-outcome labels exist."
+}

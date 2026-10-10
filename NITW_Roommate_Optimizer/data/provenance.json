@@ -1,0 +1,20 @@
+{
+  "rows": 98,
+  "numeric_features": 11,
+  "repeated_names": 3,
+  "repeated_respondents": 2,
+  "missing_emails": 0,
+  "source_sha256": "036b8111673daee3d029bd37e9ecf80de388433c717746df2ceb2300e16ac349",
+  "identified": false,
+  "source": "Original raw survey supplied with the project archive",
+  "transformation": "Direct identifiers removed; all 98 supplied response rows retained; numeric features use original values divided by 10 during processing.",
+  "removed_fields": [
+    "name",
+    "email",
+    "submission ID",
+    "respondent ID",
+    "timestamp",
+    "branch"
+  ],
+  "notes": "Pseudonymous data derived from real responses. Repeated respondent identifiers require administrative review; they were not automatically merged."
+}

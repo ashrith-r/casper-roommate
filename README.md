@@ -1,110 +1,96 @@
-<p align="center"><img src="site/icon.svg" width="64" alt="CASPER logo"></p>
-<h1 align="center">CASPER · Room for better matches.</h1>
-<p align="center">An explainable roommate matching studio.<br>Designed and rebuilt by <strong>ASHRITH RAJU</strong>.</p>
-<p align="center"><a href="https://ashrith-r.github.io/casper-roommate/">Explore the live demo ↗</a> · <a href="DEPLOYMENT.md">Deploy your own</a> · <a href="ALGORITHM.md">Understand the model</a></p>
+# CASPER
 
----
+### Constraint-aware adaptive score-based pairing with equilibrium regulation
 
-Good roommates start with understanding how people live. CASPER turns survey preferences into transparent pairing suggestions, balancing shared routines with potential friction.
+A roommate allocation system built around real survey responses, a C++17 matching engine, and interactive Python analytics. Explore the eligible graph, inspect the reasons behind each pairing, compare measured outcomes, and update an allocation as new responses arrive.
 
-This independent web rebuild grows out of a **group design-thinking project**. It replaces the lost local implementation with an interactive, deployable product and documents the assumptions behind its model. The original group repository and survey schema are credited in [CREDITS.md](CREDITS.md).
+**98 real responses · 11 numeric features · 6 interest indicators · C++17 + Python**
 
-## The experience
+![CASPER analysis computed from the supplied survey](docs/analysis.png)
 
-- A responsive matching studio with a connection map and individual pair explanations.
-- Adjustable conflict penalties and exclusion limits, with explicit stale-result indicators.
-- CSV import supporting the original raw survey headings and processed normalized columns.
-- Manual student profiles, search, sorting, and downloadable matching reports.
-- Clear visibility for unmatched students and the lowest pair score.
-- A design-thinking case study and an honest explanation of the heuristic.
-- Browser-local processing: no backend, API keys, analytics, or database.
+*Reproducible analytical figure from the actual allocation, generated with `python scripts/render_figure.py`.*
 
-The included **16 demo profiles are entirely fictional**. Original respondent data is deliberately excluded. Uploaded data exists in page memory and disappears on refresh; exporting a report saves it to your device. Google Fonts provides optional typography and receives normal font requests, but no survey data. System fonts are the fallback.
+## Run the application
 
-## Run locally
-
-Install [Node.js 22 or newer](https://nodejs.org/), then:
+Use Python 3.12 and a C++17 compiler (`g++` or `clang++`). From the repository root:
 
 ```sh
-git clone https://github.com/ashrith-r/casper-roommate.git
-cd casper-roommate
-node scripts/serve.mjs
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS / Linux: source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m streamlit run NITW_Roommate_Optimizer/app.py
 ```
 
-Open **http://127.0.0.1:4173**. No package installation is required. Do not open `index.html` directly from the filesystem: JavaScript modules need an HTTP server.
+The native engine compiles automatically on the first run. On Windows, set `CXX` to the full path of your installed `g++.exe` if it is not on PATH. The included public dataset is derived from the original survey; no additional download or credential is needed for the matching interface.
 
-```sh
-node --test tests/*.test.mjs
-```
+**Deploy:** follow [Streamlit Community Cloud setup](DEPLOYMENT.md). GitHub stores the source; Streamlit runs the Python application and native engine.
 
-## Bring survey responses
+## Inside the application
 
-1. Open **Students → Template** to download an example CSV.
-2. Use numeric values from **0–10** for cleanliness, sleep routine, social energy, snoring frequency and snoring sensitivity. Interests are comma-separated inside a quoted CSV field.
-3. Choose **Original survey / template · 0–10**, or **Normalized / processed data · 0–1** for normalized columns.
-4. Leave **Replace names with student labels** enabled for a pseudonymous demonstration.
-5. Select **Choose CSV**. Import replaces the cohort only after validation succeeds.
-6. Return to **Matching studio**, run matching, inspect explanations, and export the CSV.
-
-```csv
-name,cleanliness,sleep_time,social,snore_freq,snore_sensitivity,hobbies
-Student 001,8,7,5,2,4,"Coding,Music"
-Student 002,9,8,6,1,5,"Coding,Music"
-```
-
-The importer supports `Full Name`, the source typo `Cleaniliness`, `Sleep Time`, the original social/snoring question headings, and `hobbies_raw`. Normalized imports prefer `*_norm` columns. Unused fields, including emails, are discarded. Missing required scores and out-of-range values cause a clear error instead of silent imputation. Repeated names are flagged for review, with every row preserved under a unique ID; named imports append row numbers to repeated labels. Check for duplicate submissions yourself before using matches. Cohorts are capped at **200 people / 2 MB** for this browser prototype.
-
-**Interpretation matters:** original form scale descriptions are not included in the source repository. Verify the meaning of the input numbers before using real responses. In the new manual form, low→high means relaxed→tidy, early→late sleep preference, quiet→social, never→often snoring, and low→high snoring sensitivity. Sleep is ordinal, not circular clock time.
-
-## How matching works
-
-```text
-Survey CSV / student profiles
-  → validate and normalize
-  → compatibility − λ × conflict²
-  → remove invalid or non-positive edges
-  → greedy selection in descending score order
-  → constrained two-pair swaps (at most 10 passes)
-  → pairs, explanations and unmatched students
-```
-
-The browser version uses **JavaScript ES modules** to run directly on GitHub Pages. It is a fresh implementation of the supplied C++ prototype’s idea, with corrected symmetric conflict semantics, both swap alternatives, constraint checks during refinement and a fixed iteration budget.
-
-With a fixed feature set, time is **O(n² log n + Pn²)**, P ≤ 10, and memory is **O(n²)**. It is a heuristic: no near-optimality, maximum cardinality, stable-roommate, fairness, or real-world satisfaction guarantee is claimed. Scores are model values, not success probabilities. See [ALGORITHM.md](ALGORITHM.md).
-
-## Design-thinking process
-
-| Stage | Project focus |
+| Workspace | What it provides |
 | --- | --- |
-| Empathize | The group collected form responses about living habits and preferences. |
-| Define | Identify interpretable similarities and likely sources of conflict. |
-| Ideate | Balance compatibility with a nonlinear conflict penalty. |
-| Prototype | Build a usable matching studio that exposes its reasoning. |
-| Test next | Validate questionnaire anchors, compare with exact matching, collect consented feedback and evaluate actual outcomes. |
+| Overview | Real allocation metrics, selected graph edges, exclusions, pairings and unmatched participants |
+| Pair explorer | Preference radar, compatibility, conflict components and nonlinear penalty |
+| Graph laboratory | Interactive network, full pairwise matrices, distributions and a downloadable figure |
+| Benchmarks | Heap greedy, CASPER and exact Blossom reference on the same eligible graph |
+| Survey evidence | Original-scale distributions, interests, satisfaction and provenance |
+| Online matching | Add an actual response; preserve existing pairs or recompute the allocation |
+| Delivery | Allocation export, actual room inventory and administrator-controlled email delivery |
 
-This repository does not invent participant counts, feedback quotes, user-study results or satisfaction improvements.
+## The matching pipeline
 
-## Repository map
-
-```text
-site/                  Deployable static app
-  index.html           Dashboard, student management, method and project story
-  styles.css           Responsive visual design
-  app.js               Interface state and interactions
-  engine.js            Scoring and constrained matching
-  data.js              Demo cohort, CSV parsing and survey mapping
-  template.csv         Fictional import example
-tests/                 Built-in Node tests; no test dependencies
-scripts/serve.mjs       Local preview server
-.github/workflows/     Tests and GitHub Pages deployment
+```mermaid
+flowchart LR
+    A[Survey responses] --> B[Validation and normalization]
+    B --> C[Compatibility and symmetric conflict]
+    C --> D[Constraint pruning]
+    D --> E[C++ priority-queue matching]
+    E --> F[Bounded fairness refinement]
+    F --> G[Pairs and unmatched participants]
+    G --> H[Streamlit analytics and reviewed allocation]
 ```
 
-## Scope and next steps
+Compatibility retains the original weighted numeric similarity and Jaccard interests. Conflict averages the two directional comparisons so reversing the participants cannot change the score. CASPER selects edges by `CS − λ × CF²`, then checks both alternative swaps between two pairs without restoring excluded edges.
 
-This is a student project and discussion tool. Review suggested pairs with students before using them. It does not enforce room capacity, eligibility, mutual choices, hostel policies, or safeguarding requirements. Explicit fairness objectives, calibrated survey weights, exact-matching benchmarks, unmatched-student augmentation and consented longitudinal evaluation are possible next steps.
+Fairness mode only accepts swaps that preserve total score, protect the smaller affected pair score and do not increase score variance. These guarantees apply to the unlocked refinement pool, up to floating-point tolerance. Pair count stays fixed during refinement. See [algorithm details](ALGORITHM.md).
 
-## Credits
+## Measured on the supplied data
 
-Redesign and web implementation: **ASHRITH RAJU** ([ashrith-r](https://github.com/ashrith-r)).
+At λ = 0.5, conflict threshold = 0.4, and fairness enabled:
 
-Group-project reference: [CASPER-Roommate-System / NITW_Roommate_Optimizer](https://github.com/chitranshpriyanshu/CASPER-Roommate-System/tree/main/NITW_Roommate_Optimizer). Original group member names should be added when confirmed; this rebuild does not claim sole authorship of the group concept. See [CREDITS.md](CREDITS.md) for provenance and reuse notes.
+| Measure | Result |
+| --- | ---: |
+| Survey responses | 98 |
+| Eligible edges | 1,520 |
+| Selected pairs | 40 |
+| Participants awaiting review | 18 |
+| Paired coverage | 81.63% |
+| Mean adjusted score | 0.711756 |
+| Weakest pair score | 0.385455 |
+
+These are computed outcomes, not estimates of successful roommate relationships. CASPER is a bounded heuristic: it does not guarantee maximum cardinality, globally optimal score or stable-roommate matching. The app calculates an exact NetworkX reference for a meaningful comparison.
+
+## Data and access
+
+The public measurements retain all 98 source rows with participant labels `P001`–`P098`. Names, emails, branch, submission identifiers and timestamps are removed. This is pseudonymization, not irreversible anonymization. Duplicate respondent identifiers are recorded in the provenance audit and retained for review.
+
+The identifiable source and intermediate cleaned file are ignored by Git. To regenerate the public measurements from your locally retained source:
+
+```sh
+python scripts/prepare_data.py /path/to/private/raw_data.csv
+```
+
+Private uploads and email controls require an administrator password configured in server secrets. Public sessions cannot send email. Online changes live in the current session; download results before closing it. No database or invented participant records are included.
+
+## Stack and verification
+
+Python, Streamlit, pandas, NumPy, NetworkX, Plotly, Matplotlib, Seaborn, FastAPI and the C++17 engine. The application uses native Streamlit widgets and Python-generated charts. There is no separately authored frontend or frontend build step.
+
+```sh
+python -m pip install -r requirements-test.txt
+python -m unittest discover -s tests -v
+python scripts/benchmark.py
+```
+
+Tests cover real-data validation, symmetric scores, pruning, deterministic selection, both swap alternatives, fairness, online locks, unmatched participants, exports and API authorization. GitHub Actions repeats the checks on Linux. [Implementation scope](IMPLEMENTATION.md) documents the report requirements, adaptations and limits.
