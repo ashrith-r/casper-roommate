@@ -174,7 +174,7 @@ elif page=='Graph laboratory':
         trace='greedy' if start=='Score-first greedy' else 'v2'
         initial=report['pairs']['greedy' if trace=='greedy' else 'blossom']
         actions=report['traces'][trace]['log']
-        tick=st.slider('Accepted swap',0,len(actions),key='replay_step',help='Move the slider to replay each accepted, constraint-preserving swap.')
+        tick=st.slider('Accepted swap',0,len(actions),key=f'replay_step_{trace}',help='Move the slider to replay each accepted, constraint-preserving swap.')
         pairs=list(initial)
         for action in actions[:tick]:
             for slot,pair in zip(action['slots'],action['after']):
