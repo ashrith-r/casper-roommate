@@ -36,3 +36,11 @@ def build_graph(df, settings=Settings()):
 
 def build_edges(df, lambda_=.5, threshold=.4):
     return build_graph(df, Settings(lambda_=lambda_, threshold=threshold))['edges']
+
+
+def build_score_dict(edges):
+    """O(1) lookups in either direction; membership encodes eligibility."""
+    scores = {}
+    for a, b, weight in edges:
+        scores[a, b] = scores[b, a] = weight
+    return scores
