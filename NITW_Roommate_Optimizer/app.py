@@ -20,6 +20,8 @@ from src.data.feature_engine import conflict_components
 from src.graph.graph_builder import Settings
 from src.graph.matcher import ensure_engine
 from src.pipeline import run_pipeline, lambda_analysis, export_results
+from src.optimization.fairness import metrics
+from experiments.benchmark import run_full_benchmark
 from src import visuals
 from src.utils.email_sender import compose, send_email, email_ready
 
@@ -146,7 +148,7 @@ elif page=='Pair explorer':
     st.caption('Differences describe the supplied survey coding. They are not clinical assessments or a probability of a successful roommate relationship.')
 
 elif page=='Graph laboratory':
-    tab1,tab2,tab3=st.tabs(['Network','Pairwise matrix','Score distribution'])
+    tab1,tab2,tab3,tab4=st.tabs(['Network','Pairwise matrix','Score distribution','Matching replay'])
     with tab1:
         candidates=st.toggle('Show eligible graph edges',False)
         st.plotly_chart(visuals.network_chart(df,result,candidates),width='stretch')
@@ -159,6 +161,45 @@ elif page=='Graph laboratory':
             fig=visuals.static_heatmap(df,result);buffer=io.BytesIO();fig.savefig(buffer,format='png',dpi=180,facecolor=fig.get_facecolor());plt.close(fig)
             st.download_button('Download matrix PNG',buffer.getvalue(),'casper-score-matrix.png','image/png')
     with tab3:st.plotly_chart(visuals.distribution(result),width='stretch')
+    with tab4:
+        st.subheader('Replay the allocation, one accepted swap at a time')
+        st.caption('This is the Streamlit version of the desktop matching replay. It uses the live survey and sidebar scoring controls.')
+        replay_key=(fingerprint(df),asdict(settings))
+        if st.session_state.get('desktop_replay_key')!=replay_key:
+            with st.spinner('Preparing random, greedy and Blossom comparison on the current survey…'):
+                st.session_state.desktop_replay=run_full_benchmark(result['graph'],seed=42,trials=200)
+                st.session_state.desktop_replay_key=replay_key
+        report=st.session_state.desktop_replay
+        start=st.radio('Starting allocation',['Score-first greedy','Blossom optimum'],horizontal=True,key='replay_start')
+        trace='greedy' if start=='Score-first greedy' else 'v2'
+        initial=report['pairs']['greedy' if trace=='greedy' else 'blossom']
+        actions=report['traces'][trace]['log']
+        tick=st.slider('Accepted swap',0,len(actions),key=f'replay_step_{trace}',help='Move the slider to replay each accepted, constraint-preserving swap.')
+        pairs=list(initial)
+        for action in actions[:tick]:
+            for slot,pair in zip(action['slots'],action['after']):
+                pairs[slot]=tuple(pair)
+        replay_result=dict(result,pairs=pairs,metrics=metrics(pairs,result['graph'],len(df)))
+        state_label='Starting allocation' if tick==0 else f'After accepted swap {tick}'
+        metric_cols=st.columns(4)
+        for col,label,value in zip(metric_cols,['Replay state','Rooms','Total score','Unpaired'],
+                                   [state_label,len(pairs),f"{replay_result['metrics']['total']:.3f}",replay_result['metrics']['unmatched']]):
+            col.metric(label,value)
+        st.plotly_chart(visuals.network_chart(df,replay_result),width='stretch',key='matching-replay-network')
+        if trace=='greedy' and actions:
+            action=actions[tick-1] if tick else None
+            if action:
+                st.write(f"**Swap {tick}:** pairs {action['before'][0]} and {action['before'][1]} become {action['after'][0]} and {action['after'][1]}. Score change **+{action['delta']:.4f}**.")
+            else:
+                st.info(f"The greedy allocation starts at {report['traces']['greedy']['history'][0]:.3f}. Move the slider to step through {len(actions)} accepted swaps.")
+        else:
+            st.info('Blossom is already maximum weight at maximum cardinality on this eligible graph, so no feasible two-pair swap can improve its score.')
+        paths=report['coverage_paths']
+        if paths:
+            selected_path=st.selectbox('Why does Blossom fill more rooms?',range(len(paths)),format_func=lambda i:f"Path {i+1} · {len(paths[i])} participants")
+            path=paths[selected_path]
+            st.write('Alternating path: '+' → '.join(df.iloc[i].participant_id for i in path))
+            st.caption('Edges alternate between the greedy and Blossom allocations. Replacing the greedy edges along this path creates one additional eligible room.')
 
 elif page=='Benchmarks':
     st.subheader('Same data. Same edges. Different solvers.')

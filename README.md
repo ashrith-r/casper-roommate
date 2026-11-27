@@ -79,7 +79,7 @@ The C++ fairness refinement and desktop swap experiments use distinct acceptance
 
 ## The original allocation dashboard
 
-The repository also includes the Streamlit interface for pair explanations, unmatched-participant review, preserving assignments as responses arrive, and exporting allocations. Run it with Python 3.12 and a C++17 compiler:
+The Streamlit interface includes the same matching replay in **Graph laboratory → Matching replay**, alongside pair explanations, unmatched-participant review, preserving assignments as responses arrive, and exporting allocations. Run it with Python 3.12 and a C++17 compiler:
 
 ```sh
 python -m pip install -r requirements.txt
