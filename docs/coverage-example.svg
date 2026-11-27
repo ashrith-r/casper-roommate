@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 304" role="img" aria-labelledby="title description">
+  <title id="title">How four responses go from one room to two</title>
+  <desc id="description">Greedy pairs P052 with P053 for 0.772. Blossom pairs P005 with P052 for 0.704 and P053 with P045 for 0.582. Both new pairs pass the same eligibility checks.</desc>
+  <style>
+    text { font-family: system-ui, sans-serif; fill: #edf5f7 }
+    .label { font-size: 18px; font-weight: 650 }
+    .small { font-size: 14px; fill: #bacbd1 }
+    .id { font-family: ui-monospace, monospace; font-size: 17px; text-anchor: middle }
+    .value { font-size: 15px; text-anchor: middle; fill: #d7e4e7; font-variant-numeric: tabular-nums }
+  </style>
+  <rect width="860" height="304" rx="16" fill="#16282f"/>
+  <text x="30" y="42" font-size="25" font-weight="650">How four responses go from one room to two</text>
+  <path d="M30 62H830 M30 175H830" stroke="#3d5158"/>
+  <text class="label" x="30" y="109">Greedy</text>
+  <text class="small" x="30" y="135">1 room</text>
+  <text class="label" x="30" y="221">Blossom</text>
+  <text class="small" x="30" y="247">2 rooms</text>
+  <path d="M427 124H595" stroke="#efb76b" stroke-width="4"/>
+  <path d="M267 236H427 M595 236H755" stroke="#75dfba" stroke-width="4"/>
+  <g fill="#16282f" stroke-width="3">
+    <g stroke="#667c84" stroke-dasharray="4 4">
+      <circle cx="267" cy="124" r="29"/><circle cx="755" cy="124" r="29"/>
+    </g>
+    <g stroke="#efb76b"><circle cx="427" cy="124" r="29"/><circle cx="595" cy="124" r="29"/></g>
+    <g stroke="#75dfba">
+      <circle cx="267" cy="236" r="29"/><circle cx="427" cy="236" r="29"/>
+      <circle cx="595" cy="236" r="29"/><circle cx="755" cy="236" r="29"/>
+    </g>
+  </g>
+  <g class="id">
+    <text x="267" y="130">P005</text><text x="427" y="130">P052</text>
+    <text x="595" y="130">P053</text><text x="755" y="130">P045</text>
+    <text x="267" y="242">P005</text><text x="427" y="242">P052</text>
+    <text x="595" y="242">P053</text><text x="755" y="242">P045</text>
+  </g>
+  <g class="value">
+    <text x="511" y="113">0.772</text><text x="347" y="225">0.704</text><text x="675" y="225">0.582</text>
+  </g>
+  <text class="small" x="30" y="286">Edge labels show adjusted compatibility. Dashed circles mark unpaired responses.</text>
+</svg>

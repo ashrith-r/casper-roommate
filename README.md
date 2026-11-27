@@ -4,7 +4,9 @@ On the same 98 hostel survey responses, a greedy allocator fills **40 rooms**. A
 
 CASPER lets you inspect that decision. Each survey response becomes a vertex. An edge connects two eligible roommates, and its weight reflects their routines, shared interests and potential conflicts. Run five matching methods on the graph, then step through the assignments on your desktop.
 
-![Coverage, score distributions and sensitivity analysis for the hostel survey](docs/analysis.png)
+![Greedy pairs P052 with P053. Blossom pairs each with an unmatched participant, P005 or P045, filling two rooms.](docs/coverage-example.svg)
+
+In this four-response example, replacing one 0.772 edge with two eligible edges gives P005 and P045 a room. CASPER extracts all nine such paths from the difference between the greedy and exact matchings.
 
 ## Reproduce the result
 
@@ -31,7 +33,7 @@ The public dataset contains **98 response rows, 11 numeric preferences and 6 int
 | C++ greedy + fairness refinement | 40 | 18 | 28.470 | **0.712** | **0.385** |
 | Maximum-cardinality Blossom | **49** | **0** | **31.642** | 0.646 | 0.284 |
 
-Taking the highest-scoring edge can use the only feasible partner for another student. A two-room swap can improve the rooms already filled, but it keeps their count fixed. Blossom can reorganize the matching across a longer chain. Here, it places 18 additional responses while lowering the weakest selected score. [Recorded benchmark](docs/benchmark.json) · [Scoring and C++ refinement rules](ALGORITHM.md)
+Taking the highest-scoring edge can use the only feasible partner for another student. A two-room swap can improve the rooms already filled, but it keeps their count fixed. Blossom can reorganize the matching across a longer chain. Here, it places 18 additional responses while lowering the weakest selected score. [Survey analysis figure](docs/analysis.png) · [Recorded benchmark](docs/benchmark.json) · [Scoring and C++ refinement rules](ALGORITHM.md)
 
 ## What the experiment measures
 
