@@ -12,3 +12,4 @@ NITW_Roommate_Optimizer/data/processed/cleaned_data.csv
 private-data/
 artifacts/
 *.log
+results/

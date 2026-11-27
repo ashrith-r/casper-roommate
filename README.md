@@ -1,96 +1,70 @@
-# CASPER
+# CASPER · Who gets a roommate?
 
-### Constraint-aware adaptive score-based pairing with equilibrium regulation
+On the same 98 hostel survey responses, a greedy allocator fills **40 rooms**. An exact graph matcher fills **49**. Both obey the same conflict threshold. Where did the other nine rooms go?
 
-A roommate allocation system built around real survey responses, a C++17 matching engine, and interactive Python analytics. Explore the eligible graph, inspect the reasons behind each pairing, compare measured outcomes, and update an allocation as new responses arrive.
+CASPER lets you inspect that decision. Each survey response becomes a vertex. An edge connects two eligible roommates, and its weight reflects their routines, shared interests and potential conflicts. Run five matching methods on the graph, then step through the assignments on your desktop.
 
-**98 real responses · 11 numeric features · 6 interest indicators · C++17 + Python**
+![Coverage, score distributions and sensitivity analysis for the hostel survey](docs/analysis.png)
 
-![CASPER analysis computed from the supplied survey](docs/analysis.png)
+## Reproduce the result
 
-*Reproducible analytical figure from the actual allocation, generated with `python scripts/render_figure.py`.*
-
-## Run the application
-
-Use Python 3.12 and a C++17 compiler (`g++` or `clang++`). From the repository root:
+From the repository root, with Python 3.10+ in an active virtual environment:
 
 ```sh
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# macOS / Linux: source .venv/bin/activate
+python -m pip install -r requirements-desktop.txt
+python main.py --visualize
+```
+
+**For a one-minute demo**, click **Compare** to see all five totals. Click **Step** to move from a seeded random draw to Blossom. Switch to **Greedy start** and press **Run** to watch two rooms exchange partners whenever the move improves their combined score. The convergence plot adds a point for each accepted swap. **New data** draws up to 32 rows from the loaded survey and recomputes the comparison.
+
+For a headless run, use `python main.py --seed 42 --trials 200`. It writes a JSON report and five PNG figures to `results/`, covering total score, negative-score pairs, convergence, runtime and relative performance. Use `--data` for another validated survey CSV, `--threshold` for the conflict limit and `--penalty` for the conflict weight.
+
+## One graph, two allocation goals
+
+The public dataset contains **98 response rows, 11 numeric preferences and 6 interest indicators**. At the default threshold of 0.4 and penalty weight of 0.5, **1,520 of 4,753** possible edges are eligible.
+
+| Method | Rooms filled | Responses unpaired | Total adjusted score | Mean per room | Weakest pair |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Greedy, highest score first | 40 | 18 | 28.413 | 0.710 | 0.385 |
+| C++ greedy + fairness refinement | 40 | 18 | 28.470 | **0.712** | **0.385** |
+| Maximum-cardinality Blossom | **49** | **0** | **31.642** | 0.646 | 0.284 |
+
+Taking the highest-scoring edge can use the only feasible partner for another student. A two-room swap can improve the rooms already filled, but it keeps their count fixed. Blossom can reorganize the matching across a longer chain. Here, it places 18 additional responses while lowering the weakest selected score. [Recorded benchmark](docs/benchmark.json) · [Scoring and C++ refinement rules](ALGORITHM.md)
+
+## What the experiment measures
+
+The score is `compatibility − λ × conflict²`. Compatibility blends similarity across 11 normalized responses with Jaccard overlap across interests. Conflict includes sleep, irritability, noise versus visitors, and snoring versus sensitivity. Cohort membership and the conflict threshold determine which edges a solver may select.
+
+| Desktop method | Decision rule | Matching time after scoring |
+| --- | --- | --- |
+| Random feasible | Shuffle eligible edges, accept disjoint pairs, average 200 trials by default | O(E) per trial |
+| Score greedy | Visit eligible edges in descending weight order | O(E log E) |
+| Blossom | Maximize pair count, then total weight at that count | O(N³) |
+| Blossom + one swap pattern | Test one way to reconnect two selected pairs | O(N³ + I P²) |
+| Blossom + both patterns | Check eligible fallback and both ways to reconnect two rooms, recording each accepted move | O(N³ + I P²) |
+
+`N` counts responses, `E` eligible edges, `P` selected pairs and `I` search passes. Feature scoring takes O(N²d) for `d` features. Timings exclude the shared graph build. Random results are trial means, while the replay starts with one draw. All methods leave unpairable participants visible. A negative adjusted score and an excluded edge are counted separately.
+
+**Why can the exact-start replay end with zero swaps?** A positive-gain swap would be another matching of equal size and greater weight, contradicting Blossom's objective. The one-pattern and two-pattern runs test that prediction. The greedy-start replay uses the same two-pattern search to show genuine improvements. The C++ engine in the table uses a different acceptance rule that also protects the weaker affected pair and the variance of scores.
+
+## Inspect or extend it
+
+- [Desktop benchmark](NITW_Roommate_Optimizer/experiments/benchmark.py) and [replay](NITW_Roommate_Optimizer/src/visualization/graph_viz.py)
+- [Compatibility and conflict model](NITW_Roommate_Optimizer/src/data/feature_engine.py) and [C++17 engine](NITW_Roommate_Optimizer/cpp/casper.cpp)
+- [Survey provenance](NITW_Roommate_Optimizer/data/provenance.json) and [public input](NITW_Roommate_Optimizer/data/processed/participants.csv)
+
+The original allocation dashboard supports pair explanations, reviewing unmatched participants, locking assignments when new responses arrive and exporting results. To run it, use Python 3.12 and a C++17 compiler:
+
+```sh
 python -m pip install -r requirements.txt
 python -m streamlit run NITW_Roommate_Optimizer/app.py
 ```
 
-The native engine compiles automatically on the first run. On Windows, set `CXX` to the full path of your installed `g++.exe` if it is not on PATH. The included public dataset is derived from the original survey; no additional download or credential is needed for the matching interface.
-
-**Deploy:** follow [Streamlit Community Cloud setup](DEPLOYMENT.md). GitHub stores the source; Streamlit runs the Python application and native engine.
-
-## Inside the application
-
-| Workspace | What it provides |
-| --- | --- |
-| Overview | Real allocation metrics, selected graph edges, exclusions, pairings and unmatched participants |
-| Pair explorer | Preference radar, compatibility, conflict components and nonlinear penalty |
-| Graph laboratory | Interactive network, full pairwise matrices, distributions and a downloadable figure |
-| Benchmarks | Heap greedy, CASPER and exact Blossom reference on the same eligible graph |
-| Survey evidence | Original-scale distributions, interests, satisfaction and provenance |
-| Online matching | Add an actual response; preserve existing pairs or recompute the allocation |
-| Delivery | Allocation export, actual room inventory and administrator-controlled email delivery |
-
-## The matching pipeline
-
-```mermaid
-flowchart LR
-    A[Survey responses] --> B[Validation and normalization]
-    B --> C[Compatibility and symmetric conflict]
-    C --> D[Constraint pruning]
-    D --> E[C++ priority-queue matching]
-    E --> F[Bounded fairness refinement]
-    F --> G[Pairs and unmatched participants]
-    G --> H[Streamlit analytics and reviewed allocation]
-```
-
-Compatibility retains the original weighted numeric similarity and Jaccard interests. Conflict averages the two directional comparisons so reversing the participants cannot change the score. CASPER selects edges by `CS − λ × CF²`, then checks both alternative swaps between two pairs without restoring excluded edges.
-
-Fairness mode only accepts swaps that preserve total score, protect the smaller affected pair score and do not increase score variance. These guarantees apply to the unlocked refinement pool, up to floating-point tolerance. Pair count stays fixed during refinement. See [algorithm details](ALGORITHM.md).
-
-## Measured on the supplied data
-
-At λ = 0.5, conflict threshold = 0.4, and fairness enabled:
-
-| Measure | Result |
-| --- | ---: |
-| Survey responses | 98 |
-| Eligible edges | 1,520 |
-| Selected pairs | 40 |
-| Participants awaiting review | 18 |
-| Paired coverage | 81.63% |
-| Mean adjusted score | 0.711756 |
-| Weakest pair score | 0.385455 |
-
-These are computed outcomes, not estimates of successful roommate relationships. CASPER is a bounded heuristic: it does not guarantee maximum cardinality, globally optimal score or stable-roommate matching. The app calculates an exact NetworkX reference for a meaningful comparison.
-
-## Data and access
-
-The public measurements retain all 98 source rows with participant labels `P001`–`P098`. Names, emails, branch, submission identifiers and timestamps are removed. This is pseudonymization, not irreversible anonymization. Duplicate respondent identifiers are recorded in the provenance audit and retained for review.
-
-The identifiable source and intermediate cleaned file are ignored by Git. To regenerate the public measurements from your locally retained source:
-
-```sh
-python scripts/prepare_data.py /path/to/private/raw_data.csv
-```
-
-Private uploads and email controls require an administrator password configured in server secrets. Public sessions cannot send email. Online changes live in the current session; download results before closing it. No database or invented participant records are included.
-
-## Stack and verification
-
-Python, Streamlit, pandas, NumPy, NetworkX, Plotly, Matplotlib, Seaborn, FastAPI and the C++17 engine. The application uses native Streamlit widgets and Python-generated charts. There is no separately authored frontend or frontend build step.
+To verify both interfaces and the native engine:
 
 ```sh
 python -m pip install -r requirements-test.txt
 python -m unittest discover -s tests -v
-python scripts/benchmark.py
 ```
 
-Tests cover real-data validation, symmetric scores, pruning, deterministic selection, both swap alternatives, fairness, online locks, unmatched participants, exports and API authorization. GitHub Actions repeats the checks on Linux. [Implementation scope](IMPLEMENTATION.md) documents the report requirements, adaptations and limits.
+Names and contact details were removed from the public survey. Repeated responses were retained and flagged in the source audit. The scores measure the stated preference model. The survey contains no follow-up outcomes for the proposed roommates. [Data and deployment notes](DEPLOYMENT.md) · [Implementation scope](IMPLEMENTATION.md)
