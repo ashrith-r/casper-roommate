@@ -16,7 +16,7 @@ QUIET = '#b7bbd2'
 GREEN = '#68e5bb'
 YELLOW = '#ffdb70'
 RED = '#ff747a'
-BUTTONS = ('Run', 'Step', 'Reset', 'New data', 'Compare', 'Switch start')
+BUTTONS = ('Run', 'Step', 'Reset', 'New data', 'Compare', 'Switch start', 'Why coverage?')
 SHORT = ('Random', 'Greedy', 'Blossom', 'One pattern', 'Both patterns')
 PALETTE = [tuple(int(255 * x) for x in hsv_to_rgb(i * .618034 % 1, .58, .94)) for i in range(60)]
 
@@ -84,6 +84,7 @@ class Studio:
     def reset(self, start):
         self.replay = Replay(self.report, start)
         self.running = False
+        self.witness = -1
         self.changed = monotonic() - 1
         self.previous = self.replay.states[0][1]
         self.coords, self.colors = positions(self.report['nodes'], self.previous, self.order)
@@ -105,6 +106,12 @@ class Studio:
         self.coords, self.colors = positions(self.report['nodes'], self.replay.states[self.replay.index][1], self.order)
 
     def action(self, name, now):
+        if name == 'Why coverage?':
+            paths = self.report['coverage_paths']
+            self.witness = (self.witness + 2) % (len(paths) + 1) - 1
+            self.running = False
+            return
+        self.witness = -1
         if name == 'Reset':
             self.reset(self.replay.start)
             self.compare = False
@@ -174,11 +181,38 @@ class Studio:
             change = 'n/a' if gain is None else f'{gain:+.1f}%'
             self.label(989, 429 + 28*i, f'{SHORT[i]:9}  {change}', 18)
         self.draw_charts()
+        if self.witness >= 0:
+            self.draw_witness()
         mouse = pg.mouse.get_pos()
         for name, rect in self.buttons.items():
             pg.draw.rect(self.screen, '#505574' if rect.collidepoint(mouse) else '#383c59', rect, border_radius=6)
             self.label(rect.x+12, rect.y+9, 'Pause' if name == 'Run' and self.running else name)
-        self.label(1060, 851, 'Exact start' if self.replay.start == 'v2' else 'Greedy start', 15, QUIET)
+        self.label(1250, 851, 'Exact start' if self.replay.start == 'v2' else 'Greedy start', 15, QUIET)
+
+    def draw_witness(self):
+        path = self.report['coverage_paths'][self.witness]
+        pg.draw.rect(self.screen, PANEL, (28, 80, 920, 482), border_radius=12)
+        self.label(50, 102, 'Where does one extra room come from?', 24)
+        count = len(self.report['coverage_paths'])
+        self.label(50, 153, f'Path {self.witness+1} of {count}  ·  {len(path)} survey rows', 15, QUIET)
+        self.label(50, 189, 'Follow the path. Alternate edges belong to different matchings.', 15)
+        cols = min(len(path), max(8, ceil(sqrt(3 * len(path)))))
+        rows = ceil(len(path) / cols)
+        coords = []
+        for i in range(len(path)):
+            row, col = divmod(i, cols)
+            if row % 2:
+                col = cols - 1 - col
+            coords.append((80 + round(col * 805 / max(1, cols-1)),
+                           310 + round(row * 145 / max(1, rows-1))))
+        for i, (a, b) in enumerate(zip(coords, coords[1:])):
+            pg.draw.line(self.screen, GREEN if i % 2 == 0 else YELLOW, a, b, 4)
+        for node, point in zip(path, coords):
+            pg.draw.circle(self.screen, TEXT, point, 7)
+            self.label(point[0]-10, point[1]+12, node+1, 12)
+        self.label(50, 508, f'Greedy: {len(path)//2-1} rooms', 18, YELLOW)
+        self.label(350, 508, f'Blossom: {len(path)//2} rooms', 18, GREEN)
+        self.label(680, 510, 'Click again for next path', 15, QUIET)
 
     def draw_charts(self):
         self.label(48, 595, 'Score after each accepted swap', 18)

@@ -15,6 +15,25 @@ def percentage(value, base):
     return 100 * (value - base) / abs(base) if base else None
 
 
+def coverage_paths(greedy, exact):
+    """Extract disjoint augmenting paths in the difference of two matchings."""
+    gmate = {a: b for edge in greedy for a, b in (edge, edge[::-1])}
+    emate = {a: b for edge in exact for a, b in (edge, edge[::-1])}
+    paths = []
+    for start in sorted(emate.keys() - gmate.keys()):
+        path = [start]
+        while path[-1] in emate:
+            partner = emate[path[-1]]
+            path.append(partner)
+            if partner not in gmate:
+                # Both ends are free in greedy. Save just one orientation.
+                if start < partner:
+                    paths.append(path)
+                break
+            path.append(gmate[partner])
+    return sorted(paths, key=lambda path: (len(path), path))
+
+
 def run_full_benchmark(graph, *, seed=42, trials=200):
     if trials < 1:
         raise ValueError('Use at least one random trial.')
@@ -42,7 +61,8 @@ def run_full_benchmark(graph, *, seed=42, trials=200):
     for key, row in rows.items():
         row['v2_gain_pct'] = percentage(rows['v2']['total'], row['total'])
     return dict(seed=seed, trials=trials, nodes=runner.n, eligible=len(runner.edges),
-                methods=rows, pairs=pairs, traces=traces)
+                methods=rows, pairs=pairs, traces=traces,
+                coverage_paths=coverage_paths(pairs['greedy'], pairs['blossom']))
 
 
 def print_benchmark_table(report):
@@ -52,3 +72,7 @@ def print_benchmark_table(report):
         change = 'n/a' if gain is None else f'{gain:+.2f}%'
         print(f"{LABELS[key]:30} {row['pairs']:7.2f} {row['total']:9.3f} "
               f"{row['negative_pairs']:7.2f} {1000 * row['seconds']:10.3f} {change:>9}")
+    paths = report['coverage_paths']
+    if paths:
+        print(f'{len(paths)} disjoint augmenting paths explain the coverage gap.')
+        print('Shortest path (one-based rows):', ' -> '.join(str(i+1) for i in paths[0]))

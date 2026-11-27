@@ -15,7 +15,9 @@ python -m pip install -r requirements-desktop.txt
 python main.py --visualize
 ```
 
-**For a one-minute demo**, click **Compare** to see all five totals. Click **Step** to move from a seeded random draw to Blossom. Switch to **Greedy start** and press **Run** to watch two rooms exchange partners whenever the move improves their combined score. The convergence plot adds a point for each accepted swap. **New data** draws up to 32 rows from the loaded survey and recomputes the comparison.
+**For a one-minute demo**, click **Compare** to see all five totals. Click **Why coverage?** to follow an alternating path that opens one additional room. Click **Step** to move from a seeded random draw to Blossom. Switch to **Greedy start** and press **Run** to watch two rooms exchange partners whenever the move improves their combined score. The convergence plot adds a point for each accepted swap. **New data** draws up to 32 rows from the loaded survey and recomputes the comparison.
+
+On the bundled survey, the exact result scores **48.89% above the seeded random-trial mean** and **11.37% above greedy**. These are changes in total modeled score, which includes the effect of placing more people.
 
 For a headless run, use `python main.py --seed 42 --trials 200`. It writes a JSON report and five PNG figures to `results/`, covering total score, negative-score pairs, convergence, runtime and relative performance. Use `--data` for another validated survey CSV, `--threshold` for the conflict limit and `--penalty` for the conflict weight.
 

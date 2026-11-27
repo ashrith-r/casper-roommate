@@ -50,6 +50,9 @@ class DesktopTests(unittest.TestCase):
                              {'score_comparison', 'conflict_comparison', 'complexity', 'convergence', 'radar'})
             for p in out.glob('*.png'):
                 self.assertTrue(p.read_bytes().startswith(b'\x89PNG\r\n\x1a\n'))
+            self.assertEqual(len(report['coverage_paths']), 9)
+            vertices = [n for path in report['coverage_paths'] for n in path]
+            self.assertEqual(len(set(vertices)), len(vertices))
             self.assertEqual(report['eligible'], 1520)
             self.assertEqual(report['methods']['v2']['pairs'], 49)
             self.assertEqual(report['traces']['v2']['log'], [])
@@ -80,6 +83,8 @@ class DesktopTests(unittest.TestCase):
                 for t in range(2, len(studio.replay.states)):
                     studio.action('Step', t)
                     studio.draw(t + .15)
+            studio.action('Why coverage?', 5)
+            studio.draw(5)
             studio.action('Reset', 5)
             self.assertEqual(studio.replay.index, 0)
             studio.action('Switch start', 5)
