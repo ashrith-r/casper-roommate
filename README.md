@@ -1,98 +1,85 @@
-# CASPER | More compatible rooms, with every decision inspectable
+# CASPER · Roommate matching for a hostel
 
-**98 survey responses. 1,520 eligible roommate edges. Five matching strategies. One question: how many people can be placed without hiding the tradeoffs?**
+P052 and P053 look like an easy decision. Their compatibility score is **0.772**, and both satisfy the hostel’s pairing rules. A greedy allocator gives them a room. The catch shows up elsewhere in the list: P005 and P045 are both left waiting.
 
-A highest-score-first greedy allocator fills 40 rooms. CASPER's exact Blossom benchmark fills all 49 possible rooms on the same graph. Each extra room has a concrete explanation: an alternating path replaces one greedy pair with two eligible pairs.
+There’s a way to house all four. Pair P005 with P052 (0.704), and P053 with P045 (0.582). Both new pairs score below the original one. Both clear the same conflict threshold. One room becomes two.
 
-![Greedy pairs P052 with P053. Blossom pairs each with an unmatched participant, P005 or P045, filling two rooms.](docs/coverage-example.svg)
+![One greedy room becomes two eligible rooms when P052 and P053 each pair with someone who was waiting.](docs/coverage-example.svg)
 
-In this four-response example, P052 and P053 have a strong 0.772 edge. Pairing P005 with P052 and P053 with P045 instead yields two valid rooms, with scores 0.704 and 0.582. CASPER extracts all nine disjoint paths that close the measured coverage gap.
+That example comes from 98 real survey responses. Across the full survey, the greedy allocator fills **40 rooms** and the exact Blossom solver fills **49**. CASPER lets you follow all nine changes that account for the gap, inspect the preferences behind an edge, and decide which tradeoff you would accept as the person assigning rooms.
 
-## What makes CASPER distinctive
+**Try it in the browser.** Open **Graph laboratory → Matching replay**. Start with **Score-first greedy** and move the swap slider to see which roommates change. The coverage path selector shows where rearranging a chain of pairs opens another room. [Open CASPER](https://casper-roommate.streamlit.app/)
 
-CASPER brings a preference model, an auditable allocation pipeline, and an optimization comparison together in one working project:
+## What the benchmark found
 
-- **Compatibility and conflict are scored separately.** Eleven normalized preferences capture daily routines, while six interest indicators add Jaccard overlap. A symmetric conflict score models sleep, noise and visitors, snoring sensitivity, and irritability.
-- **The graph represents real constraints.** Same-cohort and conflict-threshold checks determine eligible edges before matching. Every solver works on that same graph.
-- **A fairness-aware C++17 allocator makes its tradeoffs explicit.** It uses a deterministic priority queue, then checks both two-pair reconnections. Its bounded refinement preserves the total score, protects the weaker affected pair, and reduces score variance. Unmatched people stay visible.
-- **The benchmark has an exact reference.** Five strategies run on the same survey and constraints. The report records coverage, score, weakest pair, variance, and runtime so readers can see where heuristic speed and fairness trade against maximum-cardinality matching.
-- **Every reported swap can be inspected.** The desktop replay records the before and after pairs, accepted score change, running total, and convergence. Alternating paths explain how a global reorganization creates extra rooms.
+All methods see the same 1,520 eligible pairs out of 4,753 possibilities. The conflict threshold is 0.4 and the penalty weight is 0.5. The three allocations below answer two different operational questions: how to improve rooms already filled, and how to place as many people as possible.
 
-The contribution is this integrated, reproducible system and a direct evaluation on the supplied survey. The benchmark identifies which established algorithm wins each objective. CASPER does not claim a new general-purpose matching algorithm.
+| Allocation on the bundled survey | Rooms filled | People waiting | Total score | Mean per room | Weakest room | Score variance |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Highest score first | 40 | 18 | 28.413 | 0.710 | 0.385 | 0.01769 |
+| CASPER C++ refinement | 40 | 18 | 28.470 | 0.712 | 0.385 | 0.01630 |
+| Maximum-cardinality Blossom | 49 | 0 | 31.642 | 0.646 | 0.284 | 0.02253 |
 
-## Measured on the supplied survey
+**At fixed coverage**, the C++ engine accepted two swaps. Total score rose by 0.20%, the weakest room held its score, and variance across room scores fell by **7.87%**. The modest change in the total is easier to interpret alongside the narrower spread.
 
-At conflict threshold **0.4** and penalty weight **0.5**, the model accepts **1,520 of 4,753** possible edges. Here is the observed comparison:
+**When everyone needs a room**, Blossom pairs all 98 responses. It maximizes the number of rooms first, then chooses the highest total score among allocations of that size. Its total is **11.37% above greedy** and **48.89% above the mean of 200 seeded random feasible allocations**. Those percentages include the value of filling additional rooms. The lower mean and weakest-room scores show the price of full coverage on this survey. [Recorded solver results](docs/benchmark.json) · [Desktop benchmark run and figures](https://github.com/ashrith-r/casper-roommate/actions/runs/45977172515)
 
-| Method | Rooms | Total adjusted score | Mean score | Weakest pair |
-| --- | ---: | ---: | ---: | ---: |
-| Seeded random feasible matching, mean of 200 runs | 42.00 | 21.252 | 0.506 | — |
-| Score-first greedy | 40 | 28.413 | 0.710 | 0.385 |
-| **CASPER C++ with fairness refinement** | **40** | **28.470** | **0.712** | **0.385** |
-| Maximum-cardinality, maximum-weight Blossom | **49** | **31.642** | 0.646 | 0.284 |
+## How a survey response becomes an edge
 
-On this run, **CASPER's C++ allocator improves total modeled score by 0.20% over score-first greedy**, with the same pair count and weakest-pair score. The exact Blossom reference raises coverage from 40 to 49 pairs, while accepting a lower mean and weakest score. The randomized baseline averages 42 pairs across its 200 trials. Total adjusted score reflects both pair quality and how many people are paired.
+Two people can share interests and still find it difficult to share a room. CASPER keeps those signals separate. Compatibility combines similarity across eleven normalized questionnaire responses (60%) with overlap across six interests (40%). Conflict accounts for sleep routines, irritability, noise and visitors, and snoring and sensitivity. For snoring, the model compares each person’s reported frequency with the other person’s sensitivity in both directions. Reversing the order of the two responses gives the same result.
 
-The separate desktop benchmark evaluates two local-search variants initialized from Blossom. Both preserve the exact matching score here, as expected when a two-pair swap must improve an already maximum-weight matching of the same size. Start from the greedy matching to see two genuine improving swaps instead.
+The graph builder admits an edge only if the two respondents belong to the same hostel cohort and their conflict score passes the threshold. It then assigns the edge a weight:
 
-These are outcomes of the stated scoring model, not measured roommate satisfaction. The survey has no follow-up outcomes for proposed pairs. [Full benchmark report](docs/benchmark.json) · [Survey analysis](docs/analysis.png) · [Scoring and refinement details](ALGORITHM.md)
+```text
+adjusted score = compatibility − λ × conflict²
+```
 
-## Run the desktop benchmark
+The two controls have different jobs. Tightening the **threshold** can remove someone’s last eligible partner. Increasing **λ** changes the ranking of eligible partners while leaving those choices available. In **Pair explorer**, you can inspect compatibility, conflict and the resulting penalty for a selected room. [Feature calculations](NITW_Roommate_Optimizer/src/data/feature_engine.py) · [Graph construction](NITW_Roommate_Optimizer/src/graph/graph_builder.py)
 
-With Python 3.10+ in an active virtual environment:
+## What the allocator can explain
+
+**A local decision.** The C++17 engine takes eligible edges from a maximum-priority queue, skipping anyone already paired. It then considers two occupied rooms at a time and checks both ways to exchange partners. In fairness mode, an accepted exchange must preserve or improve three quantities: the total score, the lower score of the two affected rooms, and the spread of scores across the unlocked rooms (lower variance is better). At least one must improve beyond numerical tolerance. The default limit is 12 sweeps. This gives “fairness” a specific meaning that a reviewer can check against the code. [C++ matching engine](NITW_Roommate_Optimizer/cpp/casper.cpp)
+
+**A global decision.** A swap between two occupied rooms always leaves two occupied rooms. To explain how Blossom places more people, CASPER compares the greedy and exact assignments. Edges belonging to just one assignment form alternating chains or cycles. A chain that starts and ends at people left waiting by the greedy allocator contains one more Blossom edge than greedy edge. Switching those edges fills one more room. The four-person example above is the shortest such chain on this run. [Coverage path extraction](NITW_Roommate_Optimizer/experiments/benchmark.py)
+
+**An allocation already in use.** When another response arrives, the dashboard can preserve existing assignments or recompute the cohort. Preserved rooms are checked against the current constraints. The engine refines the remaining pool and reports anyone still waiting, so an administrator can review the exception before exporting the allocation. [Allocation pipeline](NITW_Roommate_Optimizer/src/pipeline.py)
+
+## Reproduce the experiment
+
+From the repository root, with Python 3.10+ in an active virtual environment:
 
 ```sh
 python -m pip install -r requirements-desktop.txt
-python main.py --visualize
-```
-
-For a short demo:
-
-1. Choose **Compare** to see all five methods.
-2. Choose **Why coverage?** to trace a path that creates one additional room.
-3. Choose **Switch start** until the display says **Greedy start**.
-4. Press **Run** to replay the two accepted swaps and watch the score trace.
-
-Press **Step** to advance one allocation at a time. **New data** samples up to 32 rows from the real survey and reruns the experiment.
-
-Run the report and charts without opening the desktop window:
-
-```sh
 python main.py --seed 42 --trials 200
 ```
 
-The command writes the machine-readable benchmark and five PNG figures to `results/`. Use `--data` with another validated survey CSV, `--threshold` to adjust conflict eligibility, or `--penalty` to adjust the conflict weight.
+The command writes a JSON report and five PNG figures to `results/`. The desktop benchmark runs random feasible matching, score-first greedy, exact Blossom, and two refinements starting from Blossom. One refinement checks a single swap pattern and the other checks both. Their expected gain over Blossom is zero: any positive swap would produce a matching of the same size with more weight than the exact solution. Starting the replay from greedy shows where those swaps do help.
 
-## What is being compared
+Run `python main.py --visualize` to open the Pygame replay. **Compare** displays all five totals, **Why coverage?** follows an alternating path, and **Switch start → Greedy start → Run** plays the accepted swaps. Use `--data` for another validated survey CSV, `--threshold` to change eligibility, and `--penalty` to change edge weights.
 
-| Strategy | Matching rule | Time after the shared score graph is built |
-| --- | --- | --- |
-| Random feasible | Shuffle eligible edges and accept disjoint pairs; report the trial mean | O(E) per trial |
-| Score greedy | Accept eligible edges in descending weight order | O(E log E) |
-| Blossom reference | Maximize cardinality, then score at that cardinality | O(N³) |
-| Blossom with one swap pattern | Check one way to reconnect two pairs | O(N³ + I P²) |
-| Blossom with both patterns | Check both eligible reconnections, then track each accepted change | O(N³ + I P²) |
+The shared scoring step costs O(n²d) for n responses and d features. For E eligible edges, p selected pairs and s sweeps, the native heap and refinement cost O(E log E + s·p²), in addition to initializing the native n-by-n weight matrix. Blossom adds an O(n³) exact comparison. The benchmark times matching separately from graph construction. [Algorithm details and complexity](ALGORITHM.md)
 
-`N` is the response count, `E` the eligible edge count, `P` the number of selected pairs, and `I` the bounded refinement passes. Score construction takes O(N²d), where `d` is the feature count. Reported matching times exclude that shared graph build. Random rows are trial means; the replay starts from one seeded draw.
+<details>
+<summary>Run the Streamlit dashboard and test suite locally</summary>
 
-The C++ fairness refinement and desktop swap experiments use distinct acceptance rules. The C++ allocator also protects the weaker pair and score variance. The desktop benchmark isolates the effect of checking one or both swap patterns. Keeping these experiments distinct makes the comparisons reproducible.
-
-## The original allocation dashboard
-
-The Streamlit interface includes the same matching replay in **Graph laboratory → Matching replay**, alongside pair explanations, unmatched-participant review, preserving assignments as responses arrive, and exporting allocations. Run it with Python 3.12 and a C++17 compiler:
+Use Python 3.12 and a C++17 compiler. The dashboard builds the native engine on first use.
 
 ```sh
 python -m pip install -r requirements.txt
 python -m streamlit run NITW_Roommate_Optimizer/app.py
 ```
 
-The public survey retains 98 response rows. Names, contact details, and direct identifiers were removed. Duplicate respondent rows are flagged in provenance and retained. [Dataset provenance](NITW_Roommate_Optimizer/data/provenance.json) · [Public measurements](NITW_Roommate_Optimizer/data/processed/participants.csv)
-
-## Verify the project
+To check the native engine, dashboard, replay and report generation:
 
 ```sh
 python -m pip install -r requirements-test.txt
 python -m unittest discover -s tests -v
 ```
 
-GitHub Actions also runs the test suite, generates the desktop benchmark, and archives its report and figures. Read the [implementation scope](IMPLEMENTATION.md) and [deployment notes](DEPLOYMENT.md) for details.
+GitHub Actions runs the suite and archives the desktop report and figures. [Deployment guide](DEPLOYMENT.md)
+
+</details>
+
+## What the data supports
+
+The public input contains 98 pseudonymous response rows. Names and contact details were removed. Repeated respondent identifiers were flagged in the source audit and their rows retained, so coverage counts refer to survey rows. The questionnaire records satisfaction with existing roommates, but it does not link those people into observed pairs or follow up on the proposed allocations. The benchmark therefore measures coverage and modeled compatibility. Measuring whether people lived well together would require a follow-up study. [Survey provenance](NITW_Roommate_Optimizer/data/provenance.json) · [Public measurements](NITW_Roommate_Optimizer/data/processed/participants.csv)
